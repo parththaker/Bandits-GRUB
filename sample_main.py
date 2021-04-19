@@ -2,22 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import toml
 import graph_algo
+import graph_generator
 import support_func
 
+
+read_graph_from_toml = False
 with_reset = False
 check_last_cluster = True
-cluster_size = 10
-
-# TODO : np.matrix is gonna be deprecated soon. Need to switch to np.array. Need to check for cross-compatibility.
-setup = '1vw_med_graph_SBM_static'
-data = toml.load('sample_config.toml')
-Degree = np.matrix(data[setup]['Degree'])
-Adj = np.matrix(data[setup]['Adj'])
-node_means = np.array(data[setup]['node_means'])
-nodes = data[setup]['nodes']
 
 
-def run_algo(GB, printer):
+def run_algo(GB, printer, cluster_size):
     """
     Run one of the algo picked from graph_algo.py
 
@@ -71,17 +65,62 @@ if __name__ == "__main__":
     Testing is performed by one run of each algorithm on a sample graph bandit problem from sample_config.toml
     """
 
+    """
+    Phase 1 : Setup graph data
+    -------------------------
+    
+    This is implemented either by reading from .toml config file or generate directly from graph_generator.py
+    """
+
+    # FIXME : read_from_toml = True is not compatible. Need to fix errors.
+    if read_graph_from_toml:
+        setup = '1vw_med_graph_SBM_static'
+        toml_data = toml.load('sample_config.toml')
+        data = toml_data[setup]
+
+        # TODO : Not implemented 'node_per_cluster' functionality in the .toml setup yet.
+        node_per_cluster = 10
+        clusters = 10
+    else:
+        node_per_cluster = 10
+        clusters = 10
+        p = 1.0
+        cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.array(range(clusters))
+
+        data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means)
+
+    # TODO : np.matrix is gonna be deprecated soon. Need to switch to np.array. Need to check for cross-compatibility.
+
+    Degree = np.matrix(data['Degree'])
+    Adj = np.matrix(data['Adj'])
+    node_means = np.array(data['node_means'])
+    nodes = data['nodes']
+
+    """
+    Phase 2 : Run competing algorithms
+    ----------------------------------
+    
+    Run the choice of algorithms defined in graph_algo.py
+    """
+
     GB = graph_algo.GraphBanditEliminationAlgo(Degree, Adj, node_means)
     GB_2 = graph_algo.GraphBanditEliminationAlgoImpSampling(Degree, Adj, node_means, eps=0.0)
     Base = graph_algo.GraphBanditBaseLine(Degree, Adj, node_means)
 
-    Time_tracker_GB, _, _ = run_algo(GB, printer="GB")
-    Time_tracker_GB_2, _, _ = run_algo(GB_2, printer="GB_2")
-    Time_tracker_Base, _, _ = run_algo(Base, printer="Base")
+    Time_tracker_GB, _, _ = run_algo(GB, printer="GB", cluster_size=node_per_cluster)
+    Time_tracker_GB_2, _, _ = run_algo(GB_2, printer="GB_2", cluster_size=node_per_cluster)
+    Time_tracker_Base, _, _ = run_algo(Base, printer="Base", cluster_size=node_per_cluster)
 
-    plt.plot(Time_tracker_GB_2, 100*np.ones(GB_2.dim) - range(len(Time_tracker_GB_2)), label='Proposed algo', linewidth=2.0)
-    plt.plot(Time_tracker_GB, 100*np.ones(GB.dim) - range(len(Time_tracker_GB)), label='Valko et.al', linewidth=2.0)
-    plt.plot(Time_tracker_Base, 100*np.ones(Base.dim)-range(len(Time_tracker_Base)), label='Cyclic algo', linewidth=2.0)
+    """
+    Phase 3 : Performance review
+    ----------------------------
+    
+    Plot the different performance plots. Here we plot 'number of nodes still in consideration' vs 'time' for
+    different competing algorithms. 
+    """
+    plt.plot(Time_tracker_GB_2, node_per_cluster*clusters*np.ones(GB_2.dim) - range(len(Time_tracker_GB_2)), label='Proposed algo', linewidth=2.0)
+    plt.plot(Time_tracker_GB, node_per_cluster*clusters*np.ones(GB.dim) - range(len(Time_tracker_GB)), label='Valko et.al', linewidth=2.0)
+    plt.plot(Time_tracker_Base, node_per_cluster*clusters*np.ones(Base.dim)-range(len(Time_tracker_Base)), label='Cyclic algo', linewidth=2.0)
     plt.title("No. of remaining arms vs time steps")
     plt.xlabel("Time steps")
     plt.ylabel("No. of remaining arms")
