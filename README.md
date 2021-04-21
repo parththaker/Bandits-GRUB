@@ -1,5 +1,5 @@
 <!-- ABOUT THE PROJECT -->
-<!--
+
 ## About The Project
 
 We consider the problem of Best-Arm Identification (BAI) in the prescence of imperfect side information in the form of a graph.
@@ -10,7 +10,7 @@ From a practical stand-point, here's why this is interesting:
 * Superior experimental evidence backed by provably better sample complexity bounds.
 
 This is the code base used for showing the superior experimental evidence.
--->
+
 ##Getting started
 
 #### System Requirements :
