@@ -4,12 +4,18 @@ Graph Generating Library
 All the functions for generating different type of graph based models for Best-Arm Identification
 Current supported models:
     1. Erdos Renyi graph
-    2. Clustered graph
-    3. Stochastic block model
+    2. Stochastic block model
+    3. Clustered graph with structure in each cluster as follows:
+        - Tree
+        - Star
+        - Erdos-Renyi
+        - Complete
+        - Barabasi-Albert
+        - Line
+        - Wheel
 
 """
 
-import toml
 import numpy as np
 import networkx
 import matplotlib.pyplot as plt
@@ -169,44 +175,6 @@ def fill_dict(new_dict, mean, adj, degree):
     return new_dict
 
 
-def erdos_renyi_graph(n, p):
-    """
-    Erdos-Renyi graph generator
-
-    Parameters
-    ----------
-    n : number of nodes
-    p : probability of edge between nodes
-
-    Returns
-    -------
-    Degree : Degree matrix
-    Adj : Adjacency matrix
-
-    """
-
-    g = networkx.generators.random_graphs.erdos_renyi_graph(n, p)
-
-    Adj = np.zeros((n, n))
-    Degree = np.zeros((n, n))
-
-    for i, j in g.edges():
-        Adj[i, j] = 1.0
-        Adj[j, i] = 1.0
-        Degree[i, i] += 1.0
-        Degree[j, j] += 1.0
-
-    # FIXME : not sure what the purpose the commented out code is serving.
-    # for i in range(n):
-    #     for j in range(n):
-    # Adj[i,j] = np.format_float_positional(Adj[i,j], trim='k')
-    # Degree[i, j] = np.format_float_positional(Degree[i,j], trim='k')
-
-
-    # show_graph_with_labels(Adj)
-    return Degree, Adj
-
-
 def sbm(k, num, p, q):
     """
     Stochastic-Block-Model graph generator
@@ -245,7 +213,7 @@ def sbm(k, num, p, q):
     return Degree, Adj
 
 
-def n_cluster_graph(k, num, p):
+def n_cluster_graph(k, num, g_type, p=0.1):
     """
     Clustered graph
 
@@ -253,7 +221,8 @@ def n_cluster_graph(k, num, p):
     ----------
     k : number of nodes per cluster
     num : number of clusters
-    p : probability of intra cluster connection
+    g_type : Type of graph structure for individual clusters
+    p(optional) : probability of intra cluster connection
 
     Returns
     -------
@@ -265,7 +234,7 @@ def n_cluster_graph(k, num, p):
     n = k * num
     for i in range(num):
         mapping = create_dict(len(g), k)
-        a = networkx.generators.random_graphs.erdos_renyi_graph(k, p)
+        a = select_graph_generator(k, g_type, p)
         b = networkx.relabel_nodes(a, mapping)
         g.append(b)
 
@@ -291,7 +260,42 @@ def n_cluster_graph(k, num, p):
     return Degree, Adj
 
 
-def call_generator(node_per_cluster, clusters, p, cluster_means):
+def select_graph_generator(k, g_type='complete', p=1.0):
+    """
+    Generate graph object based on choice of graph structure
+
+    Parameters
+    ----------
+    k : number of nodes in the cluster
+    g_type : Type of graph for the cluster
+    p : probability of connection (required for Erdos-Renyi graph)
+
+    Returns
+    -------
+    a : networkx object associated with the generated graph on k nodes
+
+    """
+    if g_type == 'complete':
+        a = networkx.generators.random_graphs.erdos_renyi_graph(k, 1.0)
+    elif g_type == 'ER':
+        a = networkx.generators.random_graphs.erdos_renyi_graph(k, p)
+    elif g_type == 'star':
+        a = networkx.generators.star_graph(k - 1)
+    elif g_type == 'wheel':
+        a = networkx.generators.wheel_graph(k)
+    elif g_type == 'line':
+        a = networkx.generators.path_graph(k)
+    elif g_type == 'tree':
+        a = networkx.generators.random_powerlaw_tree(k, gamma=2.0, tries=10000)
+    elif g_type == 'BA':
+        a = networkx.generators.barabasi_albert_graph(k, m=2)
+    else:
+        print("Mentioned graph not in list")
+        raise ValueError
+    return a
+
+
+def call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=0.0):
     """
     Wrapper function to call for getting graph related matrices
 
@@ -307,12 +311,13 @@ def call_generator(node_per_cluster, clusters, p, cluster_means):
     new_dict : dictionary with graph related data.
 
     """
-    # deg, adj = n_cluster_graph(node_per_cluster, clusters, p)
+    if graph_type == 'SBM':
+        deg, adj = sbm(node_per_cluster, clusters, p, q)
+    else:
+        deg, adj = n_cluster_graph(node_per_cluster, clusters, graph_type, p)
 
-    # TODO : Only works properly for SBM with p,q = 1.0, 0.0 since the error is not included in conf bound calculation.
-    deg, adj = sbm(node_per_cluster, clusters, p, 0.0)
     mean_vector = generate_means(node_per_cluster, clusters, cluster_means)
-    adj, deg, mean_vector = one_off_setup(adj, deg, mean_vector, node_per_cluster*clusters*1.05)
+    adj, deg, mean_vector = one_off_setup(adj, deg, mean_vector, node_per_cluster*clusters*1.10)
 
     new_dict = {}
     new_dict = fill_dict(new_dict, mean_vector, adj, deg)

@@ -11,7 +11,7 @@ import numpy as np
 import support_func
 
 with_reset = False
-
+imperfect_graph_info = True
 
 class GraphBanditBaseLine:
     """
@@ -213,7 +213,7 @@ class GraphBanditEliminationAlgo:
     Spectral bandits [Valko el.at] based graph elimination algorithm with mean estimation using Laplacian.
     """
 
-    def __init__(self, D, A, mu, eta=5.0):
+    def __init__(self, D, A, mu, eta=5.0, eps = 0.0):
         """
 
         Parameters
@@ -235,6 +235,8 @@ class GraphBanditEliminationAlgo:
         self.delta = 0.0001
         self.rho = 0.0001
         self.dim = len(self.L)
+        self.eps = eps
+        self.eta = eta
 
         self.remaining_nodes = [i for i in range(self.dim)]
         self.L_rho = self.eta*self.L + self.rho*np.identity(self.dim)
@@ -251,6 +253,17 @@ class GraphBanditEliminationAlgo:
         self.global_tracker_conf_width = []
 
         self.initialize_conf_width()
+
+    def compute_imperfect_info(self):
+        """
+        Computing the error cause of imperfect graph information
+
+        Returns
+        -------
+        <x, Lx> : quadratic error value
+
+        """
+        return support_func.matrix_norm(self.means, self.L)
 
     def required_reset(self):
         """
@@ -274,6 +287,9 @@ class GraphBanditEliminationAlgo:
         Initialize confidence width of all arms.
         """
         self.update_conf_width()
+        if imperfect_graph_info:
+            self.eps = self.compute_imperfect_info()
+            print("Epsilon error : ", self.eps)
 
     def play_arm(self, index):
         """
@@ -325,7 +341,7 @@ class GraphBanditEliminationAlgo:
 
         # TODO : Need to change log(T) to  log(|A_i|)
 
-        beta = 2*np.sqrt(14*np.log2(2*self.dim*np.trace(self.counter)/self.delta))
+        beta = 2*np.sqrt(14*np.log2(2*self.dim*np.trace(self.counter)/self.delta)) + self.eta*self.eps
         self.beta_tracker = beta
         temp_array = np.zeros(self.dim)
 
@@ -388,7 +404,6 @@ class GraphBanditEliminationAlgo:
     #     self.update_conf_width()
 
 
-
 class GraphBanditEliminationAlgoImpSampling:
     """
     Proposed graph elimination algorithm with mean estimation using Laplacian.
@@ -433,6 +448,17 @@ class GraphBanditEliminationAlgoImpSampling:
 
         self.initialize_conf_width()
 
+    def compute_imperfect_info(self):
+        """
+        Computing the error cause of imperfect graph information
+
+        Returns
+        -------
+        <x, Lx> : quadratic error value
+
+        """
+        return support_func.matrix_norm(self.means, self.L)
+
     def required_reset(self):
         """
         Reset all the arm-counter to 0.
@@ -455,6 +481,9 @@ class GraphBanditEliminationAlgoImpSampling:
         Initialize confidence width of all arms.
         """
         self.update_conf_width()
+        if imperfect_graph_info:
+            self.eps = self.compute_imperfect_info()
+            print("Epsilon error : ", self.eps)
 
     def play_arm(self, index):
         """

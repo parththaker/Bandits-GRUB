@@ -72,6 +72,7 @@ if __name__ == "__main__":
     This is implemented either by reading from .toml config file or generate directly from graph_generator.py
     """
 
+
     # FIXME : read_from_toml = True is not compatible. Need to fix errors.
     if read_graph_from_toml:
         setup = '1vw_med_graph_SBM_static'
@@ -84,10 +85,24 @@ if __name__ == "__main__":
     else:
         node_per_cluster = 10
         clusters = 10
-        p = 1.0
-        cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.array(range(clusters))
-
-        data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means)
+        p = 0.9
+        q = 0.001
+        # cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.array(range(clusters))
+        cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.arange(0, 1, 1.0/clusters)
+        """
+        Graph types supported:
+        I. SBM
+        II. N-cluster graph 
+            Possible graph types for intra cluster graphs so far:
+                1. Tree
+                2. BA
+                3. Line
+                4. Complete
+                5. ER
+                6. Star
+                7. Wheel
+        """
+        data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means, 'SBM', q=q)
 
     # TODO : np.matrix is gonna be deprecated soon. Need to switch to np.array. Need to check for cross-compatibility.
 
@@ -96,6 +111,9 @@ if __name__ == "__main__":
     node_means = np.array(data['node_means'])
     nodes = data['nodes']
 
+    new_means = support_func.find_means(Degree-Adj, 2.0, node_means)
+    node_means = new_means
+    node_means[0] = max(new_means[1:])*1.20
     """
     Phase 2 : Run competing algorithms
     ----------------------------------
@@ -118,9 +136,9 @@ if __name__ == "__main__":
     Plot the different performance plots. Here we plot 'number of nodes still in consideration' vs 'time' for
     different competing algorithms. 
     """
-    plt.plot(Time_tracker_GB_2, node_per_cluster*clusters*np.ones(GB_2.dim) - range(len(Time_tracker_GB_2)), label='Proposed algo', linewidth=2.0)
-    plt.plot(Time_tracker_GB, node_per_cluster*clusters*np.ones(GB.dim) - range(len(Time_tracker_GB)), label='Valko et.al', linewidth=2.0)
-    plt.plot(Time_tracker_Base, node_per_cluster*clusters*np.ones(Base.dim)-range(len(Time_tracker_Base)), label='Cyclic algo', linewidth=2.0)
+    plt.plot(Time_tracker_GB_2, node_per_cluster*clusters*np.ones(GB_2.dim) - range(len(Time_tracker_GB_2)), color='blue', marker='o', markersize=4, label='Proposed algo', linewidth=2.0)
+    plt.plot(Time_tracker_GB, node_per_cluster*clusters*np.ones(GB.dim) - range(len(Time_tracker_GB)), color='orange', marker='', markersize=4, label='Valko et.al', linewidth=3.0)
+    plt.plot(Time_tracker_Base, node_per_cluster*clusters*np.ones(Base.dim)-range(len(Time_tracker_Base)), color='green', marker='', markersize=4, label='Cyclic algo', linewidth=2.0)
     plt.title("No. of remaining arms vs time steps")
     plt.xlabel("Time steps")
     plt.ylabel("No. of remaining arms")
