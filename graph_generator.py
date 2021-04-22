@@ -260,7 +260,7 @@ def n_cluster_graph(k, num, g_type, p=0.1):
     return Degree, Adj
 
 
-def select_graph_generator(k, g_type='complete', p=1.0):
+def select_graph_generator(k, g_type='complete', p=1.0, m=2):
     """
     Generate graph object based on choice of graph structure
 
@@ -288,7 +288,7 @@ def select_graph_generator(k, g_type='complete', p=1.0):
     elif g_type == 'tree':
         a = networkx.generators.random_powerlaw_tree(k, gamma=2.0, tries=10000)
     elif g_type == 'BA':
-        a = networkx.generators.barabasi_albert_graph(k, m=2)
+        a = networkx.generators.barabasi_albert_graph(k, m=m)
     else:
         print("Mentioned graph not in list")
         raise ValueError

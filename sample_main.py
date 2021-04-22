@@ -6,9 +6,63 @@ import graph_generator
 import support_func
 
 
-read_graph_from_toml = False
-with_reset = False
-check_last_cluster = True
+load_sample = False
+read_config = True
+
+
+def load_parameters():
+    """
+
+    Function to call graph_generator.py to provide graph data with the config setup from one of the following:
+    1. Loads the sample graph setup from 'sample_setup.toml'
+    2. Reading the setup from 'config.toml' and then generate graph.
+    3. Generating graph from the default setup hardcodede in the function.
+
+    Returns
+    -------
+    data : dictionary with graph related data (Degree, adjacency, means, total nodes).
+    """
+    # FIXME : load_sample = True is not compatible. Need to fix errors.
+    if load_sample:
+
+        setup = '1vw_med_graph_SBM_static'
+        toml_data = toml.load('sample_setup.toml')
+
+        # TODO : Not implemented 'node_per_cluster' functionality in the .toml setup yet.
+        node_per_cluster = 10
+        clusters = 10
+
+        data = toml_data[setup]
+
+    elif read_config:
+
+        module = toml.load('config.toml')
+        config_data = module['system']
+        node_per_cluster = config_data['node_per_cluster']
+        clusters = config_data['clusters']
+        p = config_data['p']
+        q = config_data['q']
+        graph_type = config_data['graph']
+
+        cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.arange(0, 1,
+                                                                                                       1.0 / clusters)
+
+        data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=q)
+
+    # Keeptng the following option as a default parameter setup
+    else:
+
+        node_per_cluster = 10
+        clusters = 10
+        p = 0.9
+        q = 0.001
+
+        cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.arange(0, 1,
+                                                                                                       1.0 / clusters)
+
+        data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means, 'SBM', q=q)
+
+    return data, node_per_cluster, clusters
 
 
 def run_algo(GB, printer, cluster_size):
@@ -62,7 +116,7 @@ def run_algo(GB, printer, cluster_size):
 if __name__ == "__main__":
     """
     Sample code where we run 3 different algorithms from graph_algo.py. 
-    Testing is performed by one run of each algorithm on a sample graph bandit problem from sample_config.toml
+    Testing is performed by one run of each algorithm on a sample graph bandit problem from sample_setup.toml
     """
 
     """
@@ -72,37 +126,21 @@ if __name__ == "__main__":
     This is implemented either by reading from .toml config file or generate directly from graph_generator.py
     """
 
+    data, node_per_cluster, clusters = load_parameters()
 
-    # FIXME : read_from_toml = True is not compatible. Need to fix errors.
-    if read_graph_from_toml:
-        setup = '1vw_med_graph_SBM_static'
-        toml_data = toml.load('sample_config.toml')
-        data = toml_data[setup]
-
-        # TODO : Not implemented 'node_per_cluster' functionality in the .toml setup yet.
-        node_per_cluster = 10
-        clusters = 10
-    else:
-        node_per_cluster = 10
-        clusters = 10
-        p = 0.9
-        q = 0.001
-        # cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.array(range(clusters))
-        cluster_means = node_per_cluster * clusters * np.ones(clusters) - node_per_cluster * np.arange(0, 1, 1.0/clusters)
-        """
-        Graph types supported:
-        I. SBM
-        II. N-cluster graph 
-            Possible graph types for intra cluster graphs so far:
-                1. Tree
-                2. BA
-                3. Line
-                4. Complete
-                5. ER
-                6. Star
-                7. Wheel
-        """
-        data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means, 'SBM', q=q)
+    """
+    Graph types supported: Changes regarding the same can be made in config.toml
+    I. SBM
+    II. N-cluster graph 
+        Possible graph types for intra cluster graphs so far:
+            1. Tree
+            2. BA
+            3. Line
+            4. Complete
+            5. ER
+            6. Star
+            7. Wheel
+    """
 
     # TODO : np.matrix is gonna be deprecated soon. Need to switch to np.array. Need to check for cross-compatibility.
 
@@ -111,9 +149,15 @@ if __name__ == "__main__":
     node_means = np.array(data['node_means'])
     nodes = data['nodes']
 
+    # Optimization routine to find mean distribution with epsilon error bound.
     new_means = support_func.find_means(Degree-Adj, 2.0, node_means)
     node_means = new_means
-    node_means[0] = max(new_means[1:])*1.20
+
+    # Set the max mean to be 1.2 times the max mean value of all other nodes. The factor can be changed
+    a = toml.load('config.toml')
+    factor = a['system']['best_mean_factor']
+    node_means[0] = max(new_means[1:])*factor
+
     """
     Phase 2 : Run competing algorithms
     ----------------------------------

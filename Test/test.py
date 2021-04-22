@@ -21,7 +21,7 @@ class TestGraphAlgo(unittest.TestCase):
         self.assertEqual(1, 1)
 
     def test_function(self):
-        data = toml.load("../sample_config.toml")
+        data = toml.load("../sample_setup.toml")
         graph = data['1vw_med_graph_SBM_static']
         self.assertEqual(graph['nodes'], 100)
 
