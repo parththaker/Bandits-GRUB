@@ -4,4 +4,4 @@ clusters = 10
 p = 0.9
 q = 0.001
 graph = 'SBM'
-best_mean_factor = 1.20
+best_mean_factor = 1.30

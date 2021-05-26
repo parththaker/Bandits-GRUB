@@ -213,7 +213,7 @@ def sbm(k, num, p, q):
     return Degree, Adj
 
 
-def n_cluster_graph(k, num, g_type, p=0.1):
+def n_cluster_graph(k, num, g_type, p=0.1, m=2):
     """
     Clustered graph
 
@@ -234,7 +234,7 @@ def n_cluster_graph(k, num, g_type, p=0.1):
     n = k * num
     for i in range(num):
         mapping = create_dict(len(g), k)
-        a = select_graph_generator(k, g_type, p)
+        a = select_graph_generator(k, g_type, p, m)
         b = networkx.relabel_nodes(a, mapping)
         g.append(b)
 
@@ -295,7 +295,7 @@ def select_graph_generator(k, g_type='complete', p=1.0, m=2):
     return a
 
 
-def call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=0.0):
+def call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=0.0, m=2, isolate=True):
     """
     Wrapper function to call for getting graph related matrices
 
@@ -314,10 +314,12 @@ def call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=0
     if graph_type == 'SBM':
         deg, adj = sbm(node_per_cluster, clusters, p, q)
     else:
-        deg, adj = n_cluster_graph(node_per_cluster, clusters, graph_type, p)
+        deg, adj = n_cluster_graph(node_per_cluster, clusters, graph_type, p, m)
 
     mean_vector = generate_means(node_per_cluster, clusters, cluster_means)
-    adj, deg, mean_vector = one_off_setup(adj, deg, mean_vector, node_per_cluster*clusters*1.10)
+
+    if isolate:
+        adj, deg, mean_vector = one_off_setup(adj, deg, mean_vector, node_per_cluster*clusters*1.10)
 
     new_dict = {}
     new_dict = fill_dict(new_dict, mean_vector, adj, deg)

@@ -8,6 +8,20 @@ Contains function definitions required for a more generic use-case.
 import numpy as np
 from scipy.optimize import minimize
 
+
+def sherman_morrison_inverse(x, V):
+    vec = np.dot(x, V)
+    constant = 1 + matrix_norm(x, V)
+    # print(len(V), constant[0,0], len(np.outer(vec,vec)))
+    # exit()
+    try:
+        return_mat = V - (1./constant[0, 0])*np.outer(vec, vec)
+    except IndexError:
+        return_mat = V - (1./constant)*np.outer(vec, vec)
+
+    return return_mat
+
+
 def matrix_norm(x, V):
     """
     Compute quadratic function value <x, Vx>.
@@ -22,7 +36,7 @@ def matrix_norm(x, V):
     float : quadratic function value <x, Vx>
     """
 
-    return np.dot( x , np.dot(V, x).T)
+    return np.dot(x, np.dot(V, x).T)
 
 
 def gaussian_reward(mu_i, mag=1.0):
