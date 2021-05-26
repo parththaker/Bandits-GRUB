@@ -51,7 +51,6 @@ class GraphBanditBaseLine:
         self.global_tracker_conf_width = []
         self.inverse_tracker = np.zeros((self.dim, self.dim))
         self.picking_order = []
-        # self.det_tracker = []
 
         self.initialize_conf_width()
 
@@ -83,12 +82,6 @@ class GraphBanditBaseLine:
         # TODO : Current version is based on \lambda addition. Need to switch to better algorithm
         # FIXME : Testing the new alternative instead of commented code.
 
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-        # self.inverse_tracker.append(v_t_inverse)
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
-        # for i in range(self.dim):
-        #     self.conf_width[i] = np.sqrt(v_t_inverse[i, i])
-
         self.update_conf_width()
 
     def play_arm(self, index):
@@ -103,7 +96,6 @@ class GraphBanditBaseLine:
 
         # FIXME : Testing to remove function "increment_count"
 
-        #self.increment_count(index)
         self.counter[index, index] += 1
         self.update_conf_width()
 
@@ -146,9 +138,6 @@ class GraphBanditBaseLine:
         temp_array = np.zeros(self.dim)
 
         # FIXME : Testing commented out code with alternative.
-        # for i in range(self.dim):
-        #     if i in self.remaining_nodes:
-        #         temp_array[i] = self.mean_estimate[i] - beta*self.conf_width[i]
         for i in self.remaining_nodes:
             temp_array[i] = self.mean_estimate[i] - beta * self.conf_width[i]
 
@@ -176,34 +165,6 @@ class GraphBanditBaseLine:
         self.required_reset()
 
     # FIXME : Functions after this line are not known to be of any use
-
-    # def check_criteria(self):
-    #
-    #     beta = 2*np.sqrt(14*np.log2(2*self.dim*np.trace(self.counter)/self.delta))
-    #     self.beta_tracker = beta
-    #     temp_array = np.zeros(self.dim)
-    #
-    #     for i in range(self.dim):
-    #         if i in self.remaining_nodes:
-    #             temp_array[i] = self.mean_estimate[i] - beta*self.conf_width[i]
-    #     max_value = max(temp_array)
-    #     checking_array = [i for i in self.remaining_nodes if self.mean_estimate[i] +beta*self.conf_width[i] >= max_value ]
-    #     if len(checking_array) > 1:
-    #         return False
-    #     else:
-    #         return True
-    #
-    # def increment_count(self, index):
-    #     """
-    #     Updates counter based on the arm being played.
-    #
-    #     Parameters
-    #     ----------
-    #     index : Arm being played in the current round.
-    #
-    #     """
-    #     self.counter[index, index] += 1
-    #     self.update_conf_width()
 
 
 
@@ -246,8 +207,6 @@ class GraphBanditEliminationAlgo:
         self.mean_estimate = np.zeros(self.dim)
 
         self.beta_tracker = 0.0
-        # self.det_tracker = []
-        # self.counter_tracker = []
         self.inverse_tracker = np.zeros((self.dim, self.dim))
         self.picking_order = []
         self.global_tracker_conf_width = []
@@ -276,9 +235,6 @@ class GraphBanditEliminationAlgo:
         """
         Update confidence width of all arms.
         """
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-        # self.inverse_tracker.append(v_t_inverse)
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         for i in range(self.dim):
             self.conf_width[i] = np.sqrt(self.inverse_tracker[i, i])
 
@@ -288,7 +244,6 @@ class GraphBanditEliminationAlgo:
         """
         v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
         if imperfect_graph_info:
             self.eps = self.compute_imperfect_info()
@@ -308,7 +263,6 @@ class GraphBanditEliminationAlgo:
         old_v_t_inverse = self.inverse_tracker
         v_t_inverse = support_func.sherman_morrison_inverse(counter_vec, old_v_t_inverse)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
 
         # FIXME : Testing to remove function "increment_count"
@@ -341,7 +295,6 @@ class GraphBanditEliminationAlgo:
         Estimate mean using quadratic Laplacian closed form expression.
         """
 
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.mean_estimate = np.dot(self.inverse_tracker, self.total_reward)
 
     def eliminate_arms(self):
@@ -356,9 +309,6 @@ class GraphBanditEliminationAlgo:
         temp_array = np.zeros(self.dim)
 
         # FIXME : Testing commented out code with alternative.
-        # for i in range(self.dim):
-        #     if i in self.remaining_nodes:
-        #         temp_array[i] = self.mean_estimate[i] - beta*self.conf_width[i]
         for i in self.remaining_nodes:
             temp_array[i] = self.mean_estimate[0, i] - beta * self.conf_width[i]
 
@@ -385,33 +335,6 @@ class GraphBanditEliminationAlgo:
         self.estimate_mean()
         self.eliminate_arms()
         self.required_reset()
-
-    # FIXME : For the time being, removing the following dynamic changing penalty parameters
-
-    # def change_eta(self, eta):
-    #     self.eta = eta
-    #     self.L_rho = self.eta*self.L + self.rho*np.identity(self.dim)
-    #
-    # def increment_count(self, index):
-    #     """
-    #     Update counter and reward based on arm played.
-    #
-    #     Parameters
-    #     ----------
-    #     index : Arm being played in the current round.
-    #
-    #     """
-    #     self. counter[index, index] += 1
-    #     current_counter = np.array(self.counter)
-    #     self.counter_tracker.append(current_counter)
-    #
-    #     # FIXME : Testing commented out code alternative
-    #     # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-    #     # self.inverse_tracker.append(v_t_inverse)
-    #     # self.det_tracker.append(np.linalg.norm(v_t_inverse))
-    #     # for i in range(self.dim):
-    #     #     self.conf_width[i] = np.sqrt(v_t_inverse[i, i])
-    #     self.update_conf_width()
 
 
 class GraphBanditEliminationAlgoImpSampling:
@@ -450,8 +373,6 @@ class GraphBanditEliminationAlgoImpSampling:
         self.delta = 0.0001
 
         self.beta_tracker = 0.0
-        # self.det_tracker = []
-        # self.counter_tracker = []
         self.inverse_tracker = np.zeros((self.dim, self.dim))
         self.picking_order = []
         self.global_tracker_conf_width = []
@@ -480,9 +401,6 @@ class GraphBanditEliminationAlgoImpSampling:
         """
         Update confidence width of all arms.
         """
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-        # self.inverse_tracker.append(v_t_inverse)
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         for i in range(self.dim):
             self.conf_width[i] = np.sqrt(self.inverse_tracker[i, i])
 
@@ -492,7 +410,6 @@ class GraphBanditEliminationAlgoImpSampling:
         """
         v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
         if imperfect_graph_info:
             self.eps = self.compute_imperfect_info()
@@ -513,15 +430,11 @@ class GraphBanditEliminationAlgoImpSampling:
         old_v_t_inverse = self.inverse_tracker
         v_t_inverse = support_func.sherman_morrison_inverse(counter_vec, old_v_t_inverse)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
 
         # FIXME : Testing to remove function "increment_count"
-        # # self.increment_count(index)
         self. counter[index, index] += 1
         current_counter = np.array(self.counter)
-        # self.counter_tracker.append(current_counter)
-        # self.update_conf_width()
 
         reward = support_func.gaussian_reward(self.means[index])
         self.total_reward[index] = self.total_reward[index] + reward
@@ -535,9 +448,6 @@ class GraphBanditEliminationAlgoImpSampling:
         A = self.remaining_nodes
         options =[]
         for i in A:
-            # new_add = np.zeros((self.dim, self.dim))
-            # new_add[i,i] = 1
-            # current = np.linalg.inv(self.counter + new_add + self.L_rho)
             new_vec = np.zeros(self.dim)
             new_vec[i] = 1
             prev = self.inverse_tracker
@@ -580,7 +490,6 @@ class GraphBanditEliminationAlgoImpSampling:
         """
         Estimate mean using quadratic Laplacian closed form expression.
         """
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.mean_estimate = np.dot(self.inverse_tracker, self.total_reward)
 
     def eliminate_arms(self):
@@ -594,9 +503,6 @@ class GraphBanditEliminationAlgoImpSampling:
         temp_array = np.zeros(self.dim)
 
         # FIXME : Testing commented out code with alternative.
-        # for i in range(self.dim):
-        #     if i in self.remaining_nodes:
-        #         temp_array[i] = self.mean_estimate[i] - beta*self.conf_width[i]
         for i in self.remaining_nodes:
             temp_array[i] = self.mean_estimate[0, i] - beta * self.conf_width[i]
 
@@ -625,31 +531,6 @@ class GraphBanditEliminationAlgoImpSampling:
         self.required_reset()
 
     # FIXME : For the time being, removing the following dynamic changing penalty parameters
-
-    # def change_eta(self, eta):
-    #     self.eta = eta
-    #     self.L_rho = self.eta*self.L + self.rho*np.identity(self.dim)
-    #
-    # def increment_count(self, index):
-    #     """
-    #     Update counter and reward based on arm played.
-    #
-    #     Parameters
-    #     ----------
-    #     index : Arm being played in the current round.
-    #
-    #     """
-    #     self. counter[index, index] += 1
-    #     current_counter = np.array(self.counter)
-    #     self.counter_tracker.append(current_counter)
-    #
-    #     # FIXME : Testing commented out code alternative
-    #     # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-    #     # self.inverse_tracker.append(v_t_inverse)
-    #     # self.det_tracker.append(np.linalg.norm(v_t_inverse))
-    #     # for i in range(self.dim):
-    #     #     self.conf_width[i] = np.sqrt(v_t_inverse[i, i])
-    #     self.update_conf_width()
 
 
 class GraphBanditEliminationAlgoDet:
@@ -688,8 +569,6 @@ class GraphBanditEliminationAlgoDet:
         self.delta = 0.0001
 
         self.beta_tracker = 0.0
-        # self.det_tracker = []
-        # self.counter_tracker = []
         self.inverse_tracker = np.zeros((self.dim, self.dim))
         self.picking_order = []
         self.global_tracker_conf_width = []
@@ -718,9 +597,6 @@ class GraphBanditEliminationAlgoDet:
         """
         Update confidence width of all arms.
         """
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-        # self.inverse_tracker.append(v_t_inverse)
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         for i in range(self.dim):
             self.conf_width[i] = np.sqrt(self.inverse_tracker[i, i])
 
@@ -730,7 +606,6 @@ class GraphBanditEliminationAlgoDet:
         """
         v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.inverse_tracker= v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
         if imperfect_graph_info:
             self.eps = self.compute_imperfect_info()
@@ -751,15 +626,11 @@ class GraphBanditEliminationAlgoDet:
         old_v_t_inverse = self.inverse_tracker
         v_t_inverse = support_func.sherman_morrison_inverse(counter_vec, old_v_t_inverse)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
 
         # FIXME : Testing to remove function "increment_count"
-        # # self.increment_count(index)
         self. counter[index, index] += 1
         current_counter = np.array(self.counter)
-        # self.counter_tracker.append(current_counter)
-        # self.update_conf_width()
 
         reward = support_func.gaussian_reward(self.means[index])
         self.total_reward[index] = self.total_reward[index] + reward
@@ -773,9 +644,6 @@ class GraphBanditEliminationAlgoDet:
         A = self.remaining_nodes
         options =[]
         for i in A:
-            # new_add = np.zeros((self.dim, self.dim))
-            # new_add[i,i] = 1
-            # current = np.linalg.inv(self.counter + new_add + self.L_rho)
             new_vec = np.zeros(self.dim)
             new_vec[i] = 1
             current = support_func.sherman_morrison_inverse(new_vec, self.inverse_tracker)
@@ -817,7 +685,6 @@ class GraphBanditEliminationAlgoDet:
         """
         Estimate mean using quadratic Laplacian closed form expression.
         """
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.mean_estimate = np.dot(self.inverse_tracker, self.total_reward)
 
     def eliminate_arms(self):
@@ -831,9 +698,6 @@ class GraphBanditEliminationAlgoDet:
         temp_array = np.zeros(self.dim)
 
         # FIXME : Testing commented out code with alternative.
-        # for i in range(self.dim):
-        #     if i in self.remaining_nodes:
-        #         temp_array[i] = self.mean_estimate[i] - beta*self.conf_width[i]
         for i in self.remaining_nodes:
             temp_array[i] = self.mean_estimate[0, i] - beta * self.conf_width[i]
 
@@ -862,31 +726,6 @@ class GraphBanditEliminationAlgoDet:
         self.required_reset()
 
     # FIXME : For the time being, removing the following dynamic changing penalty parameters
-
-    # def change_eta(self, eta):
-    #     self.eta = eta
-    #     self.L_rho = self.eta*self.L + self.rho*np.identity(self.dim)
-    #
-    # def increment_count(self, index):
-    #     """
-    #     Update counter and reward based on arm played.
-    #
-    #     Parameters
-    #     ----------
-    #     index : Arm being played in the current round.
-    #
-    #     """
-    #     self. counter[index, index] += 1
-    #     current_counter = np.array(self.counter)
-    #     self.counter_tracker.append(current_counter)
-    #
-    #     # FIXME : Testing commented out code alternative
-    #     # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-    #     # self.inverse_tracker.append(v_t_inverse)
-    #     # self.det_tracker.append(np.linalg.norm(v_t_inverse))
-    #     # for i in range(self.dim):
-    #     #     self.conf_width[i] = np.sqrt(v_t_inverse[i, i])
-    #     self.update_conf_width()
 
 
 class GraphBanditEliminationAlgoSum:
@@ -925,8 +764,6 @@ class GraphBanditEliminationAlgoSum:
         self.delta = 0.0001
 
         self.beta_tracker = 0.0
-        # self.det_tracker = []
-        # self.counter_tracker = []
         self.inverse_tracker = np.zeros((self.dim, self.dim))
         self.picking_order = []
         self.global_tracker_conf_width = []
@@ -957,9 +794,6 @@ class GraphBanditEliminationAlgoSum:
         """
 
         # FIXME : Moving the v_t_inverse functionality to play_arm()
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-        # self.inverse_tracker.append(v_t_inverse)
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         for i in range(self.dim):
             self.conf_width[i] = np.sqrt(self.inverse_tracker[i, i])
 
@@ -969,7 +803,6 @@ class GraphBanditEliminationAlgoSum:
         """
         v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
         if imperfect_graph_info:
             self.eps = self.compute_imperfect_info()
@@ -991,14 +824,10 @@ class GraphBanditEliminationAlgoSum:
         old_v_t_inverse = self.inverse_tracker
         v_t_inverse = support_func.sherman_morrison_inverse(counter_vec, old_v_t_inverse)
         self.inverse_tracker = v_t_inverse
-        # self.det_tracker.append(np.linalg.norm(v_t_inverse))
         self.update_conf_width()
 
-        # # self.increment_count(index)
         self. counter[index, index] += 1
         current_counter = np.array(self.counter)
-        # self.counter_tracker.append(current_counter)
-        # self.update_conf_width()
 
         reward = support_func.gaussian_reward(self.means[index])
         self.total_reward[index] = self.total_reward[index] + reward
@@ -1053,7 +882,6 @@ class GraphBanditEliminationAlgoSum:
         """
         Estimate mean using quadratic Laplacian closed form expression.
         """
-        # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
         self.mean_estimate = np.dot(self.inverse_tracker, self.total_reward)
 
     def eliminate_arms(self):
@@ -1067,9 +895,6 @@ class GraphBanditEliminationAlgoSum:
         temp_array = np.zeros(self.dim)
 
         # FIXME : Testing commented out code with alternative.
-        # for i in range(self.dim):
-        #     if i in self.remaining_nodes:
-        #         temp_array[i] = self.mean_estimate[i] - beta*self.conf_width[i]
         for i in self.remaining_nodes:
             temp_array[i] = self.mean_estimate[0, i] - beta * self.conf_width[i]
 
@@ -1098,28 +923,3 @@ class GraphBanditEliminationAlgoSum:
         self.required_reset()
 
     # FIXME : For the time being, removing the following dynamic changing penalty parameters
-
-    # def change_eta(self, eta):
-    #     self.eta = eta
-    #     self.L_rho = self.eta*self.L + self.rho*np.identity(self.dim)
-    #
-    # def increment_count(self, index):
-    #     """
-    #     Update counter and reward based on arm played.
-    #
-    #     Parameters
-    #     ----------
-    #     index : Arm being played in the current round.
-    #
-    #     """
-    #     self. counter[index, index] += 1
-    #     current_counter = np.array(self.counter)
-    #     self.counter_tracker.append(current_counter)
-    #
-    #     # FIXME : Testing commented out code alternative
-    #     # v_t_inverse = np.linalg.inv(self.counter + self.L_rho)
-    #     # self.inverse_tracker.append(v_t_inverse)
-    #     # self.det_tracker.append(np.linalg.norm(v_t_inverse))
-    #     # for i in range(self.dim):
-    #     #     self.conf_width[i] = np.sqrt(v_t_inverse[i, i])
-    #     self.update_conf_width()
