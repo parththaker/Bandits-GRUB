@@ -165,11 +165,11 @@ if __name__ == "__main__":
     Run the choice of algorithms defined in graph_algo.py
     """
 
-    GB = graph_algo.GraphBanditEliminationAlgo(Degree, Adj, node_means)
-    GB_2 = graph_algo.GraphBanditEliminationAlgoImpSampling(Degree, Adj, node_means, eps=0.0)
-    GB_det = graph_algo.GraphBanditEliminationAlgoDet(Degree, Adj, node_means, eps=0.0)
-    GB_sum = graph_algo.GraphBanditEliminationAlgoSum(Degree, Adj, node_means, eps=0.0)
-    Base = graph_algo.GraphBanditBaseLine(Degree, Adj, node_means)
+    GB = graph_algo.MaxVarianceArmAlgo(Degree, Adj, node_means)
+    GB_2 = graph_algo.MaxDiffVarAlgo(Degree, Adj, node_means, eps=0.0)
+    GB_det = graph_algo.OneStepMinDetAlgo(Degree, Adj, node_means, eps=0.0)
+    GB_sum = graph_algo.OneStepMinSumAlgo(Degree, Adj, node_means, eps=0.0)
+    Base = graph_algo.NoGraphAlgo(Degree, Adj, node_means)
 
     Time_tracker_GB, _, _ = run_algo(GB, printer="GB", cluster_size=node_per_cluster)
     Time_tracker_GB_2, _, _ = run_algo(GB_2, printer="GB_2", cluster_size=node_per_cluster)

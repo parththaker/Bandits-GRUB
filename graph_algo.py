@@ -13,7 +13,8 @@ import support_func
 with_reset = False
 imperfect_graph_info = True
 
-class GraphBanditBaseLine:
+
+class NoGraphAlgo:
     """
     Cyclic algorithm with mean estimation using Laplacian.
     """
@@ -167,9 +168,7 @@ class GraphBanditBaseLine:
     # FIXME : Functions after this line are not known to be of any use
 
 
-
-
-class GraphBanditEliminationAlgo:
+class MaxVarianceArmAlgo:
     """
     Spectral bandits [Valko el.at] based graph elimination algorithm with mean estimation using Laplacian.
     """
@@ -337,7 +336,7 @@ class GraphBanditEliminationAlgo:
         self.required_reset()
 
 
-class GraphBanditEliminationAlgoImpSampling:
+class MaxDiffVarAlgo:
     """
     Proposed graph elimination algorithm with mean estimation using Laplacian.
     """
@@ -452,7 +451,10 @@ class GraphBanditEliminationAlgoImpSampling:
             new_vec[i] = 1
             prev = self.inverse_tracker
             current = support_func.sherman_morrison_inverse(new_vec, prev)
-            options.append(prev[i,i] - current[i,i])
+            temp = 0
+            for l in range(self.dim):
+                temp += prev[i,l] - current[i,l]
+            options.append(temp)
         index = np.argmax(options)
         return np.array(A)[index]
 
@@ -533,7 +535,7 @@ class GraphBanditEliminationAlgoImpSampling:
     # FIXME : For the time being, removing the following dynamic changing penalty parameters
 
 
-class GraphBanditEliminationAlgoDet:
+class OneStepMinDetAlgo:
     """
     Proposed graph elimination algorithm with mean estimation using Laplacian.
     """
@@ -728,7 +730,7 @@ class GraphBanditEliminationAlgoDet:
     # FIXME : For the time being, removing the following dynamic changing penalty parameters
 
 
-class GraphBanditEliminationAlgoSum:
+class OneStepMinSumAlgo:
     """
     Proposed graph elimination algorithm with mean estimation using Laplacian.
     """
