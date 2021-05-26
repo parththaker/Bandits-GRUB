@@ -9,6 +9,44 @@ import numpy as np
 from scipy.optimize import minimize
 
 
+def jumping_list(clusters, tot):
+    num_cluster = len(clusters)
+    # print(clusters)
+    # print(sum([len(clu) for clu in clusters]))
+    pick_order = []
+    i=-1
+    while len(pick_order) < tot:
+        i = i+1
+        for j in range(num_cluster):
+            try:
+                a = clusters[j][i]
+                # print(tot, a, len(pick_order))
+                pick_order.append(a)
+            except IndexError:
+                pass
+    return pick_order
+
+
+def get_clusters(Adj):
+    dim = len(Adj)
+    label = np.array([i for i in range(dim)])
+    for j in range(dim):
+        for i in range(dim):
+            if Adj[i, j] != 0:
+                if i >= j:
+                    label[i] = label[j]
+                else:
+                    label[j] = label[i]
+
+    clusters_label = set(label)
+    clusters = []
+    for i in clusters_label:
+        new_cluster = np.where(label == i)[0]
+        clusters.append(new_cluster)
+
+    return clusters
+
+
 def sherman_morrison_inverse(x, V):
     vec = np.dot(x, V)
     constant = 1 + matrix_norm(x, V)
