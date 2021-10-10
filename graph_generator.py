@@ -17,9 +17,102 @@ Current supported models:
 """
 
 import numpy as np
+import csv
+import random
 import networkx
 import matplotlib.pyplot as plt
 import networkx as nx
+
+def add_neighbours(list, Adj, check):
+    if len(check)==0:
+        return list
+
+    dim = len(Adj)
+    for i in range(dim):
+        switch = 0
+        for j in check:
+
+            if Adj[i, j]==1:
+                switch +=1
+        # print(Adj[i, j], switch)
+        if switch >= len(check)*0.5:
+            # print("why is it going here?")
+            # print(switch, len(check), check)
+            list.append(i)
+    return list
+
+def clean_num_list(array):
+    new_array = []
+    for i in array:
+        try:
+            new_array.append(i[0])
+        except:
+            new_array.append(i)
+
+    return new_array
+
+def better_subsample(Adj, num_nodes):
+    dim = len(Adj)
+    common_nodes = []
+
+    new_node_index = np.random.randint(0, num_nodes)
+    new_node_list = [new_node_index]
+    new_node_list = add_neighbours(new_node_list, Adj, [new_node_index])
+    print(new_node_list, len(new_node_list))
+
+    for i in range(len(new_node_list)):
+        common_nodes = add_neighbours(common_nodes, Adj, new_node_list[:i])
+
+    print(len(common_nodes))
+
+    for k in new_node_list:
+        if k not in common_nodes:
+            common_nodes.append(k)
+
+    # print(len(common_nodes), "Before")
+    common_nodes = clean_num_list(common_nodes)
+    # print(len(common_nodes), "After")
+
+    while len(common_nodes) < num_nodes:
+        new_node_index = random.sample(common_nodes, 1)
+        new_node_list = [new_node_index]
+        new_node_list = add_neighbours(new_node_list, Adj, [new_node_index])
+        # print(len(new_node_list))
+
+        print(len(common_nodes), len(common_nodes)< num_nodes)
+
+        for i in range(len(new_node_list)):
+            common_nodes = add_neighbours(common_nodes, Adj, new_node_list[:i])
+        # print(len(common_nodes), "After")
+
+        for k in new_node_list:
+            if k not in common_nodes:
+                common_nodes.append(k)
+        common_nodes = clean_num_list(common_nodes)
+
+    print(len(common_nodes))
+
+    new_node_indices = common_nodes
+    new_Adj = np.zeros((len(new_node_indices), len(new_node_indices)))
+    for index_i, i in enumerate(new_node_indices):
+        for index_j, j in enumerate(new_node_indices):
+            new_Adj[index_i, index_j] = Adj[i, j]
+    new_Deg = np.zeros((len(new_node_indices), len(new_node_indices)))
+    for i in range(len(new_node_indices)):
+        new_Deg[i,i] = sum([new_Adj[i, j] for j in range(len(new_node_indices))])
+    return new_Deg, new_Adj
+
+def subsample(Adj, num_nodes):
+    total_nodes = range(len(Adj))
+    new_node_indices = random.sample(total_nodes, num_nodes)
+    new_Adj = np.zeros((len(new_node_indices), len(new_node_indices)))
+    for index_i, i in enumerate(new_node_indices):
+        for index_j, j in enumerate(new_node_indices):
+            new_Adj[index_i, index_j] = Adj[i, j]
+    new_Deg = np.zeros((len(new_node_indices), len(new_node_indices)))
+    for i in range(len(new_node_indices)):
+        new_Deg[i,i] = sum([new_Adj[i, j] for j in range(len(new_node_indices))])
+    return new_Deg, new_Adj
 
 
 def show_graph_with_labels(adjacency_matrix):
@@ -35,7 +128,7 @@ def show_graph_with_labels(adjacency_matrix):
     edges = zip(rows.tolist(), cols.tolist())
     gr = nx.Graph()
     gr.add_edges_from(edges)
-    nx.draw(gr, node_size=500)
+    nx.draw(gr, node_size=1)
     plt.show()
 
 
@@ -173,6 +266,32 @@ def fill_dict(new_dict, mean, adj, degree):
     new_dict["Adj"] = adj
     new_dict["Degree"] = degree
     return new_dict
+
+
+def lastfm():
+    # dim = 7624  #LastFM
+    dim = 37700  #Github Social
+    Adj = np.zeros((dim, dim))
+    Deg = np.zeros((dim, dim))
+
+    # with open('/home/pkthaker/PycharmProjects/GraphBandits/lasftm_asia/lastfm_asia_edges.csv') as edgefile:
+    with open('/home/pkthaker/PycharmProjects/GraphBandits/github_social/musae_git_edges.csv') as edgefile:
+        reader = csv.reader(edgefile)
+        for row in reader:
+
+            try:
+                i = int(row[0])
+                j = int(row[1])
+                Adj[i, j] = 1
+                Adj[j, i] = 1
+                Deg[i, i] += 1
+                Deg[j, j] += 1
+            except:
+                print(row)
+                pass
+
+    # exit()
+    return Deg, Adj
 
 
 def sbm(k, num, p, q):
@@ -313,13 +432,29 @@ def call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=0
     """
     if graph_type == 'SBM':
         deg, adj = sbm(node_per_cluster, clusters, p, q)
+        mean_vector = generate_means(node_per_cluster, clusters, cluster_means)
+
+    elif graph_type == 'LastFM':
+        deg, adj = lastfm()
+        deg, adj = better_subsample(adj, 200)
+        mean_vector = 100*np.ones(len(deg))
+        show_graph_with_labels(adj)
+        # print(sorted(np.linalg.eigvals(deg-adj)))
+        # exit()
     else:
         deg, adj = n_cluster_graph(node_per_cluster, clusters, graph_type, p, m)
+        mean_vector = generate_means(node_per_cluster, clusters, cluster_means)
 
-    mean_vector = generate_means(node_per_cluster, clusters, cluster_means)
 
     if isolate:
-        adj, deg, mean_vector = one_off_setup(adj, deg, mean_vector, node_per_cluster*clusters*1.10)
+        adj, deg, mean_vector = one_off_setup(adj, deg, mean_vector, max(mean_vector)*1.10)
+        adj[0,1] = 1
+        adj[1, 0] = 1
+        deg[0,0] = 1
+        deg[1,1] += 1
+
+    # show_graph_with_labels(adj)
+    # exit()
 
     new_dict = {}
     new_dict = fill_dict(new_dict, mean_vector, adj, deg)

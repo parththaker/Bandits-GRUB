@@ -116,8 +116,21 @@ def laplacian_error(x, L, eps):
     # print(abs(matrix_norm(x, L) - eps), np.linalg.norm(matrix_norm(x, L) - eps))
     return np.linalg.norm(matrix_norm(x, L) - eps)
 
+
+def laplacian_jac(x, L, eps):
+    # print(int(np.sign(matrix_norm(x, L) - eps)))
+    # return int(np.sign(matrix_norm(x, L) - eps))*L
+    return L
+
 def find_means(L, eps, x0):
     res = minimize(laplacian_error, x0, method='Nelder-Mead', args=(L, eps), tol=0.001, options={'disp' : True})
+    mean_vector = res.x
+    print(res.message)
+    return mean_vector
+
+
+def find_means_2(L, eps, x0):
+    res = minimize(laplacian_error, x0, method='BFGS', jac=laplacian_jac, args=(L, eps), tol=0.1, options={'disp' : True})
     mean_vector = res.x
     print(res.message)
     return mean_vector
