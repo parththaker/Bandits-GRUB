@@ -23,25 +23,45 @@ import networkx
 import matplotlib.pyplot as plt
 import networkx as nx
 
-def add_neighbours(list, Adj, check):
+
+def add_neighbours(cluster_index, Adj, check, factor=0.5):
+    """
+    Creates a list of nodes which are densely connected between each other.
+    
+    Parameters
+    ----------
+    cluster_index : Node index of nodes belonging to a densely connected cluster
+    Adj : Adjacency matrix of the graph
+    check : Temp array
+
+    """
     if len(check)==0:
-        return list
+        return cluster_index
 
     dim = len(Adj)
     for i in range(dim):
         switch = 0
         for j in check:
-
             if Adj[i, j]==1:
                 switch +=1
         # print(Adj[i, j], switch)
-        if switch >= len(check)*0.5:
+        if switch >= len(check)*factor:
             # print("why is it going here?")
             # print(switch, len(check), check)
-            list.append(i)
-    return list
+            cluster_index.append(i)
+    return cluster_index
+
 
 def clean_num_list(array):
+    """
+
+    Patch function to make array consistent with usage
+
+    Parameters
+    ----------
+    array : 1-D array
+
+    """
     new_array = []
     for i in array:
         try:
@@ -51,7 +71,18 @@ def clean_num_list(array):
 
     return new_array
 
+
 def better_subsample(Adj, num_nodes):
+    """
+    Subroutine to subsample open-source graphs to perform experiments on a smaller scale.
+    This function prioritises finding connected clusters of nodes.
+
+    Parameters
+    ----------
+    Adj : Adjacency matrix of the graph
+    num_nodes : Number of nodes in the subsampled graph
+
+    """
     dim = len(Adj)
     common_nodes = []
 
@@ -102,7 +133,17 @@ def better_subsample(Adj, num_nodes):
         new_Deg[i,i] = sum([new_Adj[i, j] for j in range(len(new_node_indices))])
     return new_Deg, new_Adj
 
+
 def subsample(Adj, num_nodes):
+    """
+    Subroutine to subsample open-source graphs to perform experiments on a smaller scale
+
+    Parameters
+    ----------
+    Adj : Adjacency matrix of the graph
+    num_nodes : Number of nodes in the subsampled graph
+
+    """
     total_nodes = range(len(Adj))
     new_node_indices = random.sample(total_nodes, num_nodes)
     new_Adj = np.zeros((len(new_node_indices), len(new_node_indices)))
