@@ -6,6 +6,7 @@ Contains function definitions required for a more generic use-case.
 
 
 import numpy as np
+import math
 from scipy.optimize import minimize
 
 
@@ -58,6 +59,25 @@ def sherman_morrison_inverse(x, V):
         return_mat = V - (1./constant)*np.outer(vec, vec)
 
     return return_mat
+
+def local_eps(x, V, i):
+    """
+    Compute quadratic function value <x, Vx>.
+
+    Parameters
+    ----------
+    x : vector
+    V : Matrix
+
+    Returns
+    -------
+    float : quadratic function value <x, Vx>
+    """
+    total = 0
+    for j in range(len(V)):
+        if V[i, j]!=0:
+            total += (x[i]-x[j])**2
+    return math.sqrt(total)
 
 
 def matrix_norm(x, V):

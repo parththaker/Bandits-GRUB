@@ -166,7 +166,7 @@ if __name__ == "__main__":
         # print(node_means, new_means, support_func.matrix_norm(new_means, Degree-Adj))
         # exit()
         node_means = new_means
-        # node_means[0] = max(new_means[1:]) * 1.20
+        # node_means[0] = max(new_means[1:]) * 1.40
         """
         Phase 2 : Run competing algorithms
         ----------------------------------
@@ -176,32 +176,34 @@ if __name__ == "__main__":
         G_tracker_GB = []
         G_tracker_Cyc = []
         G_tracker_GB_2 = []
-        G_tracker_GB_det = []
+        # G_tracker_GB_det = []
         G_tracker_GB_sum = []
         G_tracker_Base = []
 
         for i in range(runs):
             print("Run no. : ", i)
 
-            Cyc = graph_algo.CyclicAlgo(Degree, Adj, node_means)
-            GB = graph_algo.MaxVarianceArmAlgo(Degree, Adj, node_means)
-            GB_2 = graph_algo.MaxDiffVarAlgo(Degree, Adj, node_means, eps=0.0)
-            GB_det = graph_algo.OneStepMinDetAlgo(Degree, Adj, node_means, eps=0.0)
-            GB_sum = graph_algo.OneStepMinSumAlgo(Degree, Adj, node_means, eps=0.0)
+            eta = 1.0
+
+            Cyc = graph_algo.CyclicAlgo(Degree, Adj, node_means, eta=eta)
+            GB = graph_algo.MaxVarianceArmAlgo(Degree, Adj, node_means, eta=eta)
+            GB_2 = graph_algo.MaxDiffVarAlgo(Degree, Adj, node_means, eta=eta, eps=0.0)
+            # GB_det = graph_algo.OneStepMinDetAlgo(Degree, Adj, node_means, eta=eta, eps=0.0)
+            GB_sum = graph_algo.OneStepMinSumAlgo(Degree, Adj, node_means, eta=eta, eps=0.0)
             Base = graph_algo.NoGraphAlgo(Degree, Adj, node_means)
 
             Time_tracker_Cyc, _, _ = run_algo(Cyc, printer="Cyc", cluster_size=node_per_cluster)
             Time_tracker_GB_sum, _, _ = run_algo(GB_sum, printer="GB_sum", cluster_size=node_per_cluster)
             Time_tracker_GB, _, _ = run_algo(GB, printer="GB", cluster_size=node_per_cluster)
             Time_tracker_GB_2, _, _ = run_algo(GB_2, printer="GB_2", cluster_size=node_per_cluster)
-            Time_tracker_GB_det, _, _ = run_algo(GB_det, printer="GB_det", cluster_size=node_per_cluster)
+            # Time_tracker_GB_det, _, _ = run_algo(GB_det, printer="GB_det", cluster_size=node_per_cluster)
             Time_tracker_Base, _, _ = run_algo(Base, printer="Base", cluster_size=node_per_cluster)
 
             if len(G_tracker_GB) == 0:
                 G_tracker_Cyc = Time_tracker_Cyc
                 G_tracker_GB = Time_tracker_GB
                 G_tracker_GB_2 = Time_tracker_GB_2
-                G_tracker_GB_det = Time_tracker_GB_det
+                # G_tracker_GB_det = Time_tracker_GB_det
                 G_tracker_GB_sum = Time_tracker_GB_sum
                 G_tracker_Base = Time_tracker_Base
             else:
@@ -209,7 +211,7 @@ if __name__ == "__main__":
                     G_tracker_Cyc[j] = (i * G_tracker_Cyc[j] + Time_tracker_Cyc[j]) / float(i + 1)
                     G_tracker_GB[j] = (i * G_tracker_GB[j] + Time_tracker_GB[j]) / float(i + 1)
                     G_tracker_GB_2[j] = (i * G_tracker_GB_2[j] + Time_tracker_GB_2[j]) / float(i + 1)
-                    G_tracker_GB_det[j] = (i * G_tracker_GB_det[j] + Time_tracker_GB_det[j]) / float(i + 1)
+                    # G_tracker_GB_det[j] = (i * G_tracker_GB_det[j] + Time_tracker_GB_det[j]) / float(i + 1)
                     G_tracker_GB_sum[j] = (i * G_tracker_GB_sum[j] + Time_tracker_GB_sum[j]) / float(i + 1)
                     G_tracker_Base[j] = (i * G_tracker_Base[j] + Time_tracker_Base[j]) / float(i + 1)
 
@@ -221,18 +223,18 @@ if __name__ == "__main__":
         different competing algorithms. 
         """
         plt.plot(G_tracker_GB_2, node_per_cluster * clusters * np.ones(len(Time_tracker_GB_2)) - range(len(Time_tracker_GB_2)),
-                 marker='o', markersize=4, label='Max diff ' + str(g_type), linewidth=2.0)
+                 marker='o', markersize=4, label='JVM-O', linewidth=2.0)
         plt.plot(G_tracker_GB, node_per_cluster * clusters * np.ones(len(Time_tracker_GB_2)) - range(len(Time_tracker_GB)),
-                 label='Valko et.al ' + str(g_type), linewidth=3.0)
+                 label='MVM', linewidth=3.0)
         plt.plot(G_tracker_Cyc,
                  node_per_cluster * clusters * np.ones(len(Time_tracker_Cyc)) - range(len(Time_tracker_Cyc)),
-                 label='Cyclic algo ' + str(g_type), linewidth=3.0)
-        plt.plot(G_tracker_GB_det, node_per_cluster * clusters * np.ones(len(Time_tracker_GB_det)) - range(len(Time_tracker_GB_det)),
-                 label='Det ' + str(g_type), linewidth=3.0)
+                 label='Cyclic', linewidth=3.0)
+        # plt.plot(G_tracker_GB_det, node_per_cluster * clusters * np.ones(len(Time_tracker_GB_det)) - range(len(Time_tracker_GB_det)),
+        #          label='Det ' + str(g_type), linewidth=3.0)
         plt.plot(G_tracker_GB_sum, node_per_cluster * clusters * np.ones(len(Time_tracker_GB_sum)) - range(len(Time_tracker_GB_sum)),
-                 label='Sum ' + str(g_type), linewidth=3.0)
+                 label='JVM-N', linewidth=3.0)
     plt.plot(G_tracker_Base, node_per_cluster * clusters * np.ones(len(Time_tracker_GB_2)) - range(len(Time_tracker_Base)),
-             label='Base algo', linewidth=2.0)
+             label='No Graph UCB', linewidth=2.0)
     plt.title("No. of remaining arms vs time steps")
     plt.xlabel("Time steps")
     plt.ylabel("No. of remaining arms")

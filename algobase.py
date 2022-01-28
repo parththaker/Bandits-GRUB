@@ -53,6 +53,8 @@ class AlgoBase:
         self.mean_estimate = np.zeros(self.dim)
         self.clusters = support_func.get_clusters(self.A)
         self.jumping_index = np.array(support_func.jumping_list(self.clusters, self.dim))
+        self.epsilon = np.zeros(self.dim)
+
 
         self.beta_tracker = 0.0
         self.inverse_tracker = np.zeros((self.dim, self.dim))
@@ -69,6 +71,8 @@ class AlgoBase:
         self.inverse_tracker = v_t_inverse
         self.update_conf_width()
         if imperfect_graph_info:
+            for i in range(self.dim):
+                self.epsilon[i] = support_func.local_eps(self.means, self.L, i)
             self.eps = np.sqrt(self.compute_imperfect_info())
             print("Epsilon error : ", self.eps)
 
@@ -81,6 +85,7 @@ class AlgoBase:
         <x, Lx> : quadratic error value
 
         """
+
         return support_func.matrix_norm(self.means, self.L)
 
     def required_reset(self):
@@ -144,7 +149,12 @@ class AlgoBase:
 
         # FIXME : Testing commented out code with alternative.
         for i in self.remaining_nodes:
-            temp_array[i] = self.mean_estimate[0, i] - beta * self.conf_width[i]
+            # beta = 2 * np.sqrt(14 * np.log2(2 * self.dim * np.trace(self.counter) / self.delta)) + 0.5 * self.eta * self.epsilon[i]
+            beta = 2 * np.sqrt(14 * np.log2(2 * self.dim * np.trace(self.counter) / self.delta))
+            e_i = np.zeros(self.dim)
+            e_i[i] = 1.0
+            bias = 0.5*self.eta*np.inner(np.dot(self.inverse_tracker, e_i), np.dot(self.L, self.means))
+            temp_array[i] = self.mean_estimate[0, i] - beta * self.conf_width[i] +bias
 
         max_value = max(temp_array)
         self.remaining_nodes = [i for i in self.remaining_nodes if

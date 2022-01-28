@@ -49,7 +49,7 @@ def load_parameters():
 
         data = graph_generator.call_generator(node_per_cluster, clusters, p, cluster_means, graph_type, q=q)
 
-    # Keeptng the following option as a default parameter setup
+    # Keeping the following option as a default parameter setup
     else:
 
         node_per_cluster = 10
@@ -149,8 +149,11 @@ if __name__ == "__main__":
     node_means = np.array(data['node_means'])
     nodes = data['nodes']
 
+    print("Checkpoint 1")
+
     # Optimization routine to find mean distribution with epsilon error bound.
-    new_means = support_func.find_means(Degree-Adj, 2.0, node_means)
+    # new_means = support_func.find_means(Degree-Adj, 12.0, node_means)
+    new_means = node_means
     node_means = new_means
 
     # Set the max mean to be 1.2 times the max mean value of all other nodes. The factor can be changed
@@ -164,17 +167,20 @@ if __name__ == "__main__":
     
     Run the choice of algorithms defined in graph_algo.py
     """
-    Cyc = graph_algo.CyclicAlgo(Degree, Adj, node_means)
-    GB = graph_algo.MaxVarianceArmAlgo(Degree, Adj, node_means)
-    GB_2 = graph_algo.MaxDiffVarAlgo(Degree, Adj, node_means, eps=0.0)
-    GB_det = graph_algo.OneStepMinDetAlgo(Degree, Adj, node_means, eps=0.0)
-    GB_sum = graph_algo.OneStepMinSumAlgo(Degree, Adj, node_means, eps=0.0)
-    Base = graph_algo.NoGraphAlgo(Degree, Adj, node_means)
+    eta = 1.0
+
+    print("Checkpoint 2")
+    Cyc = graph_algo.CyclicAlgo(Degree, Adj, node_means, eta=eta)
+    GB = graph_algo.MaxVarianceArmAlgo(Degree, Adj, node_means, eta=eta)
+    GB_2 = graph_algo.MaxDiffVarAlgo(Degree, Adj, node_means, eta=eta, eps=0.0)
+    # GB_det = graph_algo.OneStepMinDetAlgo(Degree, Adj, node_means, eta=eta, eps=0.0)
+    GB_sum = graph_algo.OneStepMinSumAlgo(Degree, Adj, node_means, eta=eta, eps=0.0)
+    Base = graph_algo.NoGraphAlgo(Degree, Adj, node_means, eta=eta)
 
     Time_tracker_Cyc, _, _ = run_algo(Cyc, printer="Cyc", cluster_size=node_per_cluster)
     Time_tracker_GB, _, _ = run_algo(GB, printer="GB", cluster_size=node_per_cluster)
     Time_tracker_GB_2, _, _ = run_algo(GB_2, printer="GB_2", cluster_size=node_per_cluster)
-    Time_tracker_GB_det, _, _ = run_algo(GB_det, printer="GB_det", cluster_size=node_per_cluster)
+    # Time_tracker_GB_det, _, _ = run_algo(GB_det, printer="GB_det", cluster_size=node_per_cluster)
     Time_tracker_GB_sum, _, _ = run_algo(GB_sum, printer="GB_sum", cluster_size=node_per_cluster)
     Time_tracker_Base, _, _ = run_algo(Base, printer="Base", cluster_size=node_per_cluster)
 
@@ -185,15 +191,15 @@ if __name__ == "__main__":
     Plot the different performance plots. Here we plot 'number of nodes still in consideration' vs 'time' for
     different competing algorithms. 
     """
-    plt.plot(Time_tracker_GB_2, node_per_cluster*clusters*np.ones(GB_2.dim) - range(len(Time_tracker_GB_2)), color='blue', marker='o', markersize=4, label='Proposed algo', linewidth=2.0)
-    plt.plot(Time_tracker_Cyc, node_per_cluster*clusters*np.ones(Cyc.dim) - range(len(Time_tracker_Cyc)), marker='o', markersize=4, label='Cyclic algo', linewidth=2.0)
-    plt.plot(Time_tracker_GB_det, node_per_cluster*clusters*np.ones(GB_det.dim) - range(len(Time_tracker_GB_det)), color='black', marker='.', markersize=4, label='Det algo', linewidth=2.0)
-    plt.plot(Time_tracker_GB_sum, node_per_cluster*clusters*np.ones(GB_sum.dim) - range(len(Time_tracker_GB_sum)), color='magenta', marker='^', markersize=4, label='Sum algo', linewidth=2.0)
-    plt.plot(Time_tracker_GB, node_per_cluster*clusters*np.ones(GB.dim) - range(len(Time_tracker_GB)), color='orange', marker='', markersize=4, label='Valko et.al', linewidth=3.0)
-    plt.plot(Time_tracker_Base, node_per_cluster*clusters*np.ones(Base.dim)-range(len(Time_tracker_Base)), color='green', marker='', markersize=4, label='No graph algo', linewidth=2.0)
+    plt.plot(Time_tracker_GB_2, len(node_means)*np.ones(GB_2.dim) - range(len(Time_tracker_GB_2)), color='blue', marker='o', markersize=2, label='MVM', linewidth=2.0)
+    plt.plot(Time_tracker_Cyc, len(node_means)*np.ones(Cyc.dim) - range(len(Time_tracker_Cyc)), marker='o', markersize=2, label='Cyclic', linewidth=2.0)
+    # plt.plot(Time_tracker_GB_det, node_per_cluster*clusters*np.ones(GB_det.dim) - range(len(Time_tracker_GB_det)), color='black', marker='.', markersize=4, label='Det algo', linewidth=2.0)
+    plt.plot(Time_tracker_GB_sum, len(node_means)*np.ones(GB_sum.dim) - range(len(Time_tracker_GB_sum)), color='magenta', marker='^', markersize=4, label='JVM-N', linewidth=2.0)
+    plt.plot(Time_tracker_GB, len(node_means)*np.ones(GB.dim) - range(len(Time_tracker_GB)), color='orange', marker='', markersize=4, label='JVM-O', linewidth=3.0)
+    plt.plot(Time_tracker_Base, len(node_means)*np.ones(Base.dim)-range(len(Time_tracker_Base)), color='green', marker='', markersize=4, label='No graph UCB', linewidth=2.0)
     plt.title("No. of remaining arms vs time steps")
     plt.xlabel("Time steps")
     plt.ylabel("No. of remaining arms")
+    plt.legend(loc='upper right', bbox_to_anchor=(1.0, 1.0))
     plt.grid()
-    plt.legend()
     plt.show()
