@@ -48,12 +48,4 @@ Apart from tinkering with the node/cluster values, the different type of graphs 
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-<!-- CONTACT -->
-## Contact
-
-[Parth Thaker](https://parththaker.github.io/)
-
-Project Link: [https://github.com/parththaker/GraphBAI](https://github.com/parththaker/GraphBAI)
-
  
