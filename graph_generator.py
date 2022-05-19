@@ -309,32 +309,6 @@ def fill_dict(new_dict, mean, adj, degree):
     return new_dict
 
 
-def lastfm():
-    # dim = 7624  #LastFM
-    dim = 37700  #Github Social
-    Adj = np.zeros((dim, dim))
-    Deg = np.zeros((dim, dim))
-
-    # with open('/home/pkthaker/PycharmProjects/GraphBandits/lasftm_asia/lastfm_asia_edges.csv') as edgefile:
-    with open('/home/pkthaker/PycharmProjects/GraphBandits/github_social/musae_git_edges.csv') as edgefile:
-        reader = csv.reader(edgefile)
-        for row in reader:
-
-            try:
-                i = int(row[0])
-                j = int(row[1])
-                Adj[i, j] = 1
-                Adj[j, i] = 1
-                Deg[i, i] += 1
-                Deg[j, j] += 1
-            except:
-                print(row)
-                pass
-
-    # exit()
-    return Deg, Adj
-
-
 def sbm(k, num, p, q):
     """
     Stochastic-Block-Model graph generator
